@@ -4,11 +4,11 @@ from typing import Annotated
 from datetime import timedelta
 from app.core.config import settings
 from app.models.Users import Token, User
+from app.core.db import users_collection
 from app.dependencies.auth_utils import (
     get_current_active_user,
     authenticate_user,
     create_access_token,
-    users_collection
 )
 
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
