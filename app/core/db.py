@@ -1,8 +1,8 @@
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-from .config import settings
+from .config import get_settings
 
-client = MongoClient(str(settings.MONGO_DSN), server_api=ServerApi('1'))
+client = MongoClient(str(get_settings().MONGO_DSN), server_api=ServerApi('1'))
 
 
 try:

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class Token(BaseModel):
     access_token: str
@@ -15,3 +15,6 @@ class User(BaseModel):
 
 class UserInDB(User):
     hashed_password: str
+
+class UserCreate(User):
+    password: str = Field(min_length=8)

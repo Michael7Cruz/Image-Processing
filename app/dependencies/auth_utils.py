@@ -7,12 +7,12 @@ from pwdlib import PasswordHash
 from typing import Annotated
 from app.models.Users import TokenData, User, UserInDB
 from app.models.Users import UserInDB
-from app.core.config import settings
+from app.core.config import get_settings
 from app.core.db import users_collection
 
-SECRET_KEY = settings.SECRET_KEY
-ALGORITHM = settings.SIGN_ALGORITHM
-ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+SECRET_KEY = get_settings().SECRET_KEY
+ALGORITHM = get_settings().SIGN_ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = get_settings().ACCESS_TOKEN_EXPIRE_MINUTES
 
 password_hash = PasswordHash.recommended()
 
