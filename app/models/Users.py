@@ -9,7 +9,7 @@ class TokenData(BaseModel):
 
 class User(BaseModel):
     username: str
-    email: str | None = None
+    email: str
     full_name: str | None = None
     disabled: bool | None = None
 
@@ -18,3 +18,6 @@ class UserInDB(User):
 
 class UserCreate(User):
     password: str = Field(min_length=8)
+
+class UserPublic(BaseModel):
+    username: str
