@@ -53,7 +53,8 @@ async def create_user(user: UserCreate):
         full_name = user.full_name,
         disabled = user.disabled,
         email = user.email,
-        hashed_password = hashed_password
+        hashed_password = hashed_password,
+        images = []
     )
     try:
         users_collection.insert_one(userInDB.model_dump())

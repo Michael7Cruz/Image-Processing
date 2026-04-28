@@ -15,6 +15,7 @@ class User(BaseModel):
 
 class UserInDB(User):
     hashed_password: str
+    images: list
 
 class UserCreate(User):
     password: str = Field(min_length=8)
