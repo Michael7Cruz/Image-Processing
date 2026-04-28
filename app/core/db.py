@@ -8,6 +8,7 @@ client = MongoClient(str(get_settings().MONGO_DSN), server_api=ServerApi('1'))
 try:
     db = client["image_processing"]
     users_collection = db["users"]  
+    img_collection = db["images"]
     client.admin.command('ping')
     print("Pinged your deployment. You successfully connected to MongoDB!")
 except Exception as e:
