@@ -27,6 +27,7 @@ async def upload_image_to_db(img_collection: Collection, user_db: dict, img_file
         "filesize": img_file.size,
         "upload_date": datetime.datetime.now(),
         "modified_date": datetime.datetime.now(),
+        "content_type": img_file.content_type,
         "data": await img_file.read(size=-1),
         "owner_id": user_db["_id"]
     }
@@ -41,7 +42,7 @@ async def upload_image_to_db(img_collection: Collection, user_db: dict, img_file
     else:
         users_collection.update_one({"_id":user_db["_id"]},{"$set":{"images":[image_id]}})
 
-    return {key: image[key] for key in ["filename","filesize","upload_date","modified_date"]}
+    return {key: image[key] for key in ["filename","filesize","upload_date","modified_date", "content_type"]}
 
 @router.post("/upload")
 async def upload_image(
@@ -85,6 +86,15 @@ async def read_image(
         raise HTTPException(status_code = status.HTTP_403_FORBIDDEN, detail = "image is not on the list of user images")
     
     # get the image data from collection (not including ids)
-    image = img_collection.find_one({"_id":ObjectId(image_id)},{"_id":0,"filename":1,"filesize":1,"upload_date":1,"modified_date":1})
+    image = img_collection.find_one(
+        {"_id":ObjectId(image_id)},
+        {"_id":0,"filename":1,"filesize":1,"upload_date":1,"modified_date":1,"content_type":1}
+    )
 
     return {"image found": image}
+
+@router.get("/viewall")
+async def view_all_images(
+    User: Annotated[User, Depends(get_current_active_user)]
+):
+    user_db = get_user_complete_db(User.username)
