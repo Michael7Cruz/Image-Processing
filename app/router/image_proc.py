@@ -1,3 +1,4 @@
+import datetime
 from fastapi import APIRouter, Depends, UploadFile, HTTPException, status
 from typing import Annotated
 from app.dependencies.auth_utils import get_current_active_user
@@ -23,6 +24,9 @@ async def upload_image_to_db(img_collection: Collection, user_db: dict, img_file
     # image file model
     image = {
         "filename": img_file.filename,
+        "filesize": img_file.size,
+        "upload_date": datetime.datetime.now(),
+        "modified_date": datetime.datetime.now(),
         "data": await img_file.read(size=-1),
         "owner_id": user_db["_id"]
     }
@@ -37,7 +41,7 @@ async def upload_image_to_db(img_collection: Collection, user_db: dict, img_file
     else:
         users_collection.update_one({"_id":user_db["_id"]},{"$set":{"images":[image_id]}})
 
-    return img_file.filename
+    return {key: image[key] for key in ["filename","filesize","upload_date","modified_date"]}
 
 @router.post("/upload")
 async def upload_image(
@@ -48,9 +52,9 @@ async def upload_image(
     user_db = get_user_complete_db(User.username)
 
     # upload to database
-    filename = await upload_image_to_db(img_collection, user_db, img_file)
+    image_out = await upload_image_to_db(img_collection, user_db, img_file)
     
-    return {"filename": filename}
+    return image_out
 
 @router.delete("/delete")
 async def delete_image(
