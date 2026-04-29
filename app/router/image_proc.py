@@ -85,6 +85,6 @@ async def read_image(
         raise HTTPException(status_code = status.HTTP_403_FORBIDDEN, detail = "image is not on the list of user images")
     
     # get the image data from collection (not including ids)
-    image = img_collection.find_one({"_id":ObjectId(image_id)},{"_id":0,"filename":1})
+    image = img_collection.find_one({"_id":ObjectId(image_id)},{"_id":0,"filename":1,"filesize":1,"upload_date":1,"modified_date":1})
 
     return {"image found": image}
