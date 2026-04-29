@@ -5,6 +5,7 @@ from app.models.Users import User
 from app.core.db import users_collection, img_collection
 from app.dependencies.auth_utils import get_user
 from pymongo.collection import Collection
+from bson.objectid import ObjectId
 
 router = APIRouter(
     prefix="/imageproc",
@@ -50,3 +51,36 @@ async def upload_image(
     filename = await upload_image_to_db(img_collection, user_db, img_file)
     
     return {"filename": filename}
+
+@router.delete("/delete")
+async def delete_image(
+    User: Annotated[User, Depends(get_current_active_user)],
+    image_id: str
+):
+    # try to delete the image_id from the list of images id
+    user_image_delete_result = users_collection.update_one({"username":User.username},{"$pull":{"images":ObjectId(image_id)}})
+    if user_image_delete_result.modified_count == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="image not found in user images")
+
+    # delete the image from image collection
+    result = img_collection.delete_one({"_id": ObjectId(image_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="image not found")
+    
+    return {"successfully deleted image": result.raw_result}
+
+@router.get("/view")
+async def read_image(
+    User: Annotated[User, Depends(get_current_active_user)],
+    image_id: str
+):
+    # verify if the user own the image
+    user_db = get_user_complete_db(User.username)
+    image_owned_by_user = ObjectId(image_id) in user_db["images"]
+    if not image_owned_by_user:
+        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN, detail = "image is not on the list of user images")
+    
+    # get the image data from collection (not including ids)
+    image = img_collection.find_one({"_id":ObjectId(image_id)},{"_id":0,"filename":1})
+
+    return {"image found": image}
