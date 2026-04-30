@@ -98,3 +98,14 @@ async def view_all_images(
     User: Annotated[User, Depends(get_current_active_user)]
 ):
     user_db = get_user_complete_db(User.username)
+    cursor = img_collection.find(
+        {"owner_id":user_db["_id"]},
+        {"_id":0,"filename":1,"filesize":1,"upload_date":1,"modified_date":1,"content_type":1},
+        max_time_ms= 5000
+    )
+
+    images = []
+    for image in cursor:
+        images.append(image)
+
+    return images
