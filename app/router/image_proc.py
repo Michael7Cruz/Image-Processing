@@ -3,10 +3,11 @@ from fastapi import APIRouter, Depends, UploadFile, HTTPException, status
 from typing import Annotated
 from app.dependencies.auth_utils import get_current_active_user
 from app.models.Users import User
+from app.models.Images import ImageFile, ImageInDB
 from app.core.db import users_collection, img_collection
-from app.dependencies.auth_utils import get_user
 from pymongo.collection import Collection
 from bson.objectid import ObjectId
+from PIL import Image
 
 router = APIRouter(
     prefix="/imageproc",
@@ -21,19 +22,29 @@ def get_user_complete_db(username: str):
     return user_db
 
 async def upload_image_to_db(img_collection: Collection, user_db: dict, img_file: UploadFile):
-    # image file model
-    image = {
-        "filename": img_file.filename,
-        "filesize": img_file.size,
-        "upload_date": datetime.datetime.now(),
-        "modified_date": datetime.datetime.now(),
-        "content_type": img_file.content_type,
-        "data": await img_file.read(size=-1),
-        "owner_id": user_db["_id"]
-    }
+    image_bytes = await img_file.read(size=-1)
+
+    with Image.open(img_file.file) as im:
+        image_file = ImageFile(
+            filename = img_file.filename,
+            filesize = img_file.size,
+            upload_date = datetime.datetime.now(),
+            modified_date = datetime.datetime.now(),
+            content_type = img_file.content_type,
+            format = im.format,
+            width = im.width,
+            height = im.height,
+            mode = im.mode
+        )
+    
+    image_in_db = ImageInDB(
+        **image_file.model_dump(),
+        data = image_bytes,
+        owner_id = user_db["_id"]
+    )
 
     # insert the image to the collection and get the id
-    image_id = img_collection.insert_one(image).inserted_id
+    image_id = img_collection.insert_one(image_in_db.model_dump()).inserted_id
 
     # check if there is already an images list field in user_db
     # if there are, then update the list, else add that field
@@ -42,7 +53,7 @@ async def upload_image_to_db(img_collection: Collection, user_db: dict, img_file
     else:
         users_collection.update_one({"_id":user_db["_id"]},{"$set":{"images":[image_id]}})
 
-    return {key: image[key] for key in ["filename","filesize","upload_date","modified_date", "content_type"]}
+    return image_file
 
 @router.post("/upload")
 async def upload_image(
@@ -88,7 +99,7 @@ async def read_image(
     # get the image data from collection (not including ids)
     image = img_collection.find_one(
         {"_id":ObjectId(image_id)},
-        {"_id":0,"filename":1,"filesize":1,"upload_date":1,"modified_date":1,"content_type":1}
+        {"_id":0,"data":0,"owner_id":0}
     )
 
     return {"image found": image}
@@ -100,7 +111,7 @@ async def view_all_images(
     user_db = get_user_complete_db(User.username)
     cursor = img_collection.find(
         {"owner_id":user_db["_id"]},
-        {"_id":0,"filename":1,"filesize":1,"upload_date":1,"modified_date":1,"content_type":1},
+        {"_id":0,"data":0,"owner_id":0},
         max_time_ms= 5000
     )
 
