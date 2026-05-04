@@ -1,14 +1,10 @@
-import datetime
 from fastapi import APIRouter, Depends, UploadFile, HTTPException, status
 from typing import Annotated
 from app.dependencies.auth_utils import get_current_active_user
 from app.models.Users import User
-from app.models.Images import ImageFile, ImageInDB
 from app.core.db import users_collection, img_collection
 from app.dependencies.image_proc import get_user_complete_db, upload_image_to_db
-from pymongo.collection import Collection
 from bson.objectid import ObjectId
-from PIL import Image
 
 router = APIRouter(
     prefix="/image",
