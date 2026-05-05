@@ -3,8 +3,12 @@ from typing import Annotated
 from app.dependencies.auth_utils import get_current_active_user
 from app.models.Users import User
 from app.core.db import users_collection, img_collection
-from app.dependencies.image_proc import get_user_complete_db, upload_image_to_db
+from app.dependencies.image_proc import get_user_complete_db, upload_image_to_db, verify_image_owner
 from bson.objectid import ObjectId
+from PIL import Image
+from io import BytesIO
+import datetime
+from app.models.Images import ImageInDB, ImageUpdate, ImageFile
 
 router = APIRouter(
     prefix="/image",
@@ -76,3 +80,43 @@ async def view_all_images(
         images.append(image)
 
     return images
+
+@router.patch("/resize", response_model=ImageFile)
+async def resize_image(
+    User: Annotated[User, Depends(get_current_active_user)],
+    image_id: str,
+    size: tuple[int, int] # [width, height]
+):
+    # verify if the user own the image
+    verify_image_owner(User.username, image_id)
+    
+    # get the image to edit
+    stored_image = img_collection.find_one({"_id":ObjectId(image_id)})
+    if stored_image is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="image not found")
+
+    # create ImageInDB model from image data
+    stored_image_model = ImageInDB(**stored_image)
+
+    # open the image then resize, also edit the width and height data from database
+    with Image.open(BytesIO(stored_image["data"])) as im:
+        # buffer to save and read edited image BytesIO data
+        img_buffer = BytesIO()
+        edited_image = im.resize(size)
+        edited_image.save(img_buffer, im.format, quality="keep")
+        modified_image_data = ImageUpdate(
+            modified_date = datetime.datetime.now(),
+            filesize = img_buffer.tell(),
+            width = size[0],
+            height = size[1],
+            data = img_buffer.getvalue()
+        )
+
+        updated_image = stored_image_model.model_copy(update=modified_image_data.model_dump(exclude_unset=True))
+
+        # save updated image to database
+        img_collection.update_one(
+            {"_id":ObjectId(image_id)},
+            {"$set":updated_image.model_dump()}
+        )
+    return updated_image

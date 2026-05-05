@@ -4,6 +4,7 @@ from fastapi import UploadFile, HTTPException, status
 from pymongo.collection import Collection
 from PIL import Image
 from app.models.Images import ImageFile, ImageInDB
+from bson.objectid import ObjectId
 
 def get_user_complete_db(username: str):
     # check user in the database
@@ -45,3 +46,10 @@ async def upload_image_to_db(img_collection: Collection, user_db: dict, img_file
         users_collection.update_one({"_id":user_db["_id"]},{"$set":{"images":[image_id]}})
 
     return image_file
+
+def verify_image_owner(user: str, image_id: str):
+    # verify if the user own the image
+    user_db = get_user_complete_db(user)
+    image_owned_by_user = ObjectId(image_id) in user_db["images"]
+    if not image_owned_by_user:
+        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN, detail = "image is not on the list of user images")

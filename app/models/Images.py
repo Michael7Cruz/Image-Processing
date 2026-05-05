@@ -16,3 +16,15 @@ class ImageFile(BaseModel):
 class ImageInDB(ImageFile):
     data: Any
     owner_id: Any
+
+class ImageUpdate(BaseModel):
+    filename: str | None = None
+    filesize: int | None = None
+    upload_date: datetime.datetime | None = None
+    modified_date: datetime.datetime
+    content_type: str | None = None
+    format: str | None = None
+    width: int | None = None
+    height: int | None = None
+    mode: str | None = None
+    data: Any
