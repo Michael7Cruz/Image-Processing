@@ -1,10 +1,11 @@
 import datetime
-from app.core.db import users_collection
+from app.core.db import users_collection, img_collection
 from fastapi import UploadFile, HTTPException, status
 from pymongo.collection import Collection
 from PIL import Image
-from app.models.Images import ImageFile, ImageInDB
+from app.models.Images import ImageFile, ImageInDB, ImageUpdate
 from bson.objectid import ObjectId
+from io import BytesIO
 
 def get_user_complete_db(username: str):
     # check user in the database
@@ -53,3 +54,36 @@ def verify_image_owner(user: str, image_id: str):
     image_owned_by_user = ObjectId(image_id) in user_db["images"]
     if not image_owned_by_user:
         raise HTTPException(status_code = status.HTTP_403_FORBIDDEN, detail = "image is not on the list of user images")
+
+# get the image from the database using id
+def get_image_by_id(image_id: str):
+    stored_image = img_collection.find_one({"_id":ObjectId(image_id)})
+
+    if stored_image is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="image not found")
+    
+    return stored_image
+
+def update_image_resize(image_id: str, size: tuple[int, int], stored_image: dict, stored_image_model: ImageInDB):
+    with Image.open(BytesIO(stored_image["data"])) as im:
+        # buffer to save and read edited image BytesIO data
+        img_buffer = BytesIO()
+        edited_image = im.resize(size)
+        edited_image.save(img_buffer, im.format, quality="keep")
+        modified_image_data = ImageUpdate(
+            modified_date = datetime.datetime.now(),
+            filesize = img_buffer.tell(),
+            width = size[0],
+            height = size[1],
+            data = img_buffer.getvalue()
+        )
+
+        updated_image = stored_image_model.model_copy(update=modified_image_data.model_dump(exclude_unset=True))
+
+        # save updated image to database
+        img_collection.update_one(
+            {"_id":ObjectId(image_id)},
+            {"$set":updated_image.model_dump()}
+        )
+    
+    return updated_image
