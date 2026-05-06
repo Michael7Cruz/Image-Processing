@@ -11,7 +11,8 @@ from app.dependencies.image_proc import (
     verify_image_owner, 
     get_image_by_id, 
     update_image_resize,
-    update_image_crop
+    update_image_crop,
+    update_image_rotate
 )
 
 
@@ -103,7 +104,7 @@ async def resize_image(
 
     # open the image then resize, also edit the width and height data from database
     updated_image = update_image_resize(image_id, size, stored_image, stored_image_model)
-    
+
     return updated_image
 
 @router.patch("/crop", response_model=ImageFile)
@@ -123,5 +124,25 @@ async def crop_image(
 
     # crop the image and update the database
     updated_image = update_image_crop(image_id, box, stored_image, stored_image_model)
+
+    return updated_image
+
+@router.patch("/rotate", response_model=ImageFile)
+async def rotate_image(
+    User: Annotated[User, Depends(get_current_active_user)],
+    image_id: str,
+    angle: float # in degrees counter clockwise.
+):
+    # verify if the user own the image
+    verify_image_owner(User.username, image_id)
+
+    # get the image to edit
+    stored_image = get_image_by_id(image_id)
+
+    # create ImageInDB model from image data
+    stored_image_model = ImageInDB(**stored_image)
+
+    # crop the image and update the database
+    updated_image = update_image_rotate(image_id, angle, stored_image, stored_image_model)
 
     return updated_image

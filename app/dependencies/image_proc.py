@@ -119,3 +119,28 @@ def update_image_crop(image_id: str, box: tuple[float, float, float, float] | No
         )
     
     return updated_image
+
+def update_image_rotate(image_id: str, angle: float, stored_image: dict, stored_image_model: ImageInDB):
+    with Image.open(BytesIO(stored_image["data"])) as im:
+        # buffer to save and read edited image BytesIO data
+        img_buffer = BytesIO()
+        edited_image = im.rotate(angle)
+        # save image to buffer with the original format and same quality
+        edited_image.save(img_buffer, im.format, quality="keep")
+        modified_image_data = ImageUpdate(
+            modified_date = datetime.datetime.now(),
+            filesize = img_buffer.tell(),
+            width = edited_image.width,
+            height = edited_image.height,
+            data = img_buffer.getvalue()
+        )
+
+        updated_image = stored_image_model.model_copy(update=modified_image_data.model_dump(exclude_unset=True))
+
+        # save updated image to database
+        img_collection.update_one(
+            {"_id":ObjectId(image_id)},
+            {"$set":updated_image.model_dump()}
+        )
+    
+    return updated_image
