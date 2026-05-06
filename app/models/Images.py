@@ -9,8 +9,8 @@ class ImageFile(BaseModel):
     modified_date: datetime.datetime
     content_type: str | None = None
     format: str | None = None
-    width: int
-    height: int
+    width: float
+    height: float
     mode: str
 
 class ImageInDB(ImageFile):
@@ -24,7 +24,7 @@ class ImageUpdate(BaseModel):
     modified_date: datetime.datetime
     content_type: str | None = None
     format: str | None = None
-    width: int | None = None
-    height: int | None = None
+    width: float | None = None
+    height: float | None = None
     mode: str | None = None
     data: Any

@@ -69,12 +69,44 @@ def update_image_resize(image_id: str, size: tuple[int, int], stored_image: dict
         # buffer to save and read edited image BytesIO data
         img_buffer = BytesIO()
         edited_image = im.resize(size)
+        # save image to buffer with the original format and same quality
         edited_image.save(img_buffer, im.format, quality="keep")
         modified_image_data = ImageUpdate(
             modified_date = datetime.datetime.now(),
             filesize = img_buffer.tell(),
-            width = size[0],
-            height = size[1],
+            width = edited_image.width,
+            height = edited_image.height,
+            data = img_buffer.getvalue()
+        )
+
+        updated_image = stored_image_model.model_copy(update=modified_image_data.model_dump(exclude_unset=True))
+
+        # save updated image to database
+        img_collection.update_one(
+            {"_id":ObjectId(image_id)},
+            {"$set":updated_image.model_dump()}
+        )
+    
+    return updated_image
+
+def update_image_crop(image_id: str, box: tuple[float, float, float, float] | None, stored_image: dict, stored_image_model: ImageInDB):
+    with Image.open(BytesIO(stored_image["data"])) as im:
+        # buffer to save and read edited image BytesIO data
+        img_buffer = BytesIO()
+        # check validity of box based on image size
+        # The right is (left+width) and lower is (upper+height).
+        box_is_valid = box and box[0] >= 0 and box[1] >= 0 and box[0] + box[2] <= im.width and box[1] + box[3] <= im.height
+        if box_is_valid:
+            edited_image = im.crop(box)
+        else:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid rectangular region")
+        # save image to buffer with the original format and same quality
+        edited_image.save(img_buffer, im.format, quality="keep")
+        modified_image_data = ImageUpdate(
+            modified_date = datetime.datetime.now(),
+            filesize = img_buffer.tell(),
+            width = edited_image.width,
+            height = edited_image.height,
             data = img_buffer.getvalue()
         )
 
