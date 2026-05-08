@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, UploadFile, HTTPException, status
+from fastapi import APIRouter, Body, Depends, UploadFile, HTTPException, status
 from typing import Annotated
 from app.dependencies.auth_utils import get_current_active_user
 from app.models.Users import User
@@ -6,15 +6,15 @@ from app.core.db import users_collection, img_collection
 from bson.objectid import ObjectId
 from app.models.Images import ImageInDB, ImageFile
 from app.dependencies.image_proc import (
-    get_user_complete_db, 
+    get_user_complete_db,
     upload_image_to_db, 
     verify_image_owner, 
     get_image_by_id, 
     update_image_resize,
     update_image_crop,
-    update_image_rotate
+    update_image_rotate,
+    update_image_watermark_text, 
 )
-
 
 router = APIRouter(
     prefix="/image",
@@ -144,5 +144,38 @@ async def rotate_image(
 
     # crop the image and update the database
     updated_image = update_image_rotate(image_id, angle, stored_image, stored_image_model)
+
+    return updated_image
+
+@router.patch("/watermark_text", response_model=ImageFile)
+async def watermark_text(
+    User: Annotated[User, Depends(get_current_active_user)],
+    image_id: str,
+    xy: Annotated[tuple[float, float], Body()],
+    fill_color: Annotated[tuple[int, int, int, int], Body()] = (255, 255, 255, 128),
+    text_watermark: Annotated[str, Body()] = "sample watermark",
+    font_type: Annotated[str, Body()] = "arial.ttf",
+    font_size: Annotated[float, Body()] = 10.0
+):
+    # verify if the user own the image
+    verify_image_owner(User.username, image_id)
+
+    # get the image to edit
+    stored_image = get_image_by_id(image_id)
+
+    # create ImageInDB model from image data
+    stored_image_model = ImageInDB(**stored_image)
+
+    # crop the image and update the database
+    updated_image = update_image_watermark_text(
+        image_id, 
+        xy, 
+        fill_color, 
+        text_watermark, 
+        font_type, 
+        font_size,
+        stored_image, 
+        stored_image_model
+    )
 
     return updated_image

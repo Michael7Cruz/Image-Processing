@@ -2,7 +2,7 @@ import datetime
 from app.core.db import users_collection, img_collection
 from fastapi import UploadFile, HTTPException, status
 from pymongo.collection import Collection
-from PIL import Image
+from PIL import Image, ImageFont, ImageDraw
 from app.models.Images import ImageFile, ImageInDB, ImageUpdate
 from bson.objectid import ObjectId
 from io import BytesIO
@@ -127,6 +127,53 @@ def update_image_rotate(image_id: str, angle: float, stored_image: dict, stored_
         edited_image = im.rotate(angle)
         # save image to buffer with the original format and same quality
         edited_image.save(img_buffer, im.format, quality="keep")
+        modified_image_data = ImageUpdate(
+            modified_date = datetime.datetime.now(),
+            filesize = img_buffer.tell(),
+            width = edited_image.width,
+            height = edited_image.height,
+            data = img_buffer.getvalue()
+        )
+
+        updated_image = stored_image_model.model_copy(update=modified_image_data.model_dump(exclude_unset=True))
+
+        # save updated image to database
+        img_collection.update_one(
+            {"_id":ObjectId(image_id)},
+            {"$set":updated_image.model_dump()}
+        )
+    
+    return updated_image
+
+def update_image_watermark_text(
+        image_id: str, 
+        xy: tuple[float, float], 
+        fill_color: tuple[int, int, int, int], 
+        text_watermark: str, 
+        font_type: str, 
+        font_size: float,
+        stored_image: dict, 
+        stored_image_model: ImageInDB
+    ):
+    with Image.open(BytesIO(stored_image["data"])) as im:
+        # convert image to RGBA if it is not, to support transparency for watermark
+        if im.mode != "RGBA":
+            im = im.convert("RGBA")
+        # buffer to save and read edited image BytesIO data
+        img_buffer = BytesIO()
+        # transparent image for watermark
+        watermark = Image.new("RGBA", im.size, (255,255,255,0))
+        # get a font
+        fnt = ImageFont.truetype(font_type, font_size)
+        # get a drawing context
+        d = ImageDraw.Draw(watermark)
+        # draw text on the transparent image
+        d.text(xy, text_watermark, font=fnt, fill=fill_color)
+        #combine the original image with the watermark
+        edited_image = Image.alpha_composite(im, watermark)
+        edited_image.show()
+        # save image to buffer with the original format and same quality
+        edited_image.save(img_buffer, stored_image["format"], quality="keep")
         modified_image_data = ImageUpdate(
             modified_date = datetime.datetime.now(),
             filesize = img_buffer.tell(),
