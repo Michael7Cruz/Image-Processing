@@ -171,7 +171,7 @@ def update_image_watermark_text(
         d.text(xy, text_watermark, font=fnt, fill=fill_color)
         #combine the original image with the watermark
         edited_image = Image.alpha_composite(im, watermark)
-        edited_image.show()
+        #edited_image.show()
         # save image to buffer with the original format and same quality
         edited_image.save(img_buffer, stored_image["format"], quality="keep")
         modified_image_data = ImageUpdate(
