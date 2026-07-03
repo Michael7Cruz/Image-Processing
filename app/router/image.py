@@ -7,6 +7,7 @@ from bson.objectid import ObjectId
 from app.models.Images import ImageInDB, ImageFile
 from app.dependencies.image_proc import (
     get_user_complete_db,
+    update_image_compress,
     upload_image_to_db, 
     verify_image_owner, 
     get_image_by_id, 
@@ -14,6 +15,7 @@ from app.dependencies.image_proc import (
     update_image_crop,
     update_image_rotate,
     update_image_watermark_text, 
+    update_image_flip
 )
 
 router = APIRouter(
@@ -177,5 +179,45 @@ async def watermark_text(
         stored_image, 
         stored_image_model
     )
+
+    return updated_image
+
+@router.patch("/flip", response_model=ImageFile)
+async def flip_image(
+    User: Annotated[User, Depends(get_current_active_user)],
+    image_id: str,
+    method: Annotated[bool, Body()] # 0 for horizontal flip, 1 for vertical flip
+):
+    # verify if the user own the image
+    verify_image_owner(User.username, image_id)
+
+    # get the image to edit
+    stored_image = get_image_by_id(image_id)
+
+    # create ImageInDB model from image data
+    stored_image_model = ImageInDB(**stored_image)
+
+    # flip the image and update the database
+    updated_image = update_image_flip(image_id, method, stored_image, stored_image_model)
+
+    return updated_image
+
+@router.patch("/compress", response_model=ImageFile)
+async def compress_image(
+    User: Annotated[User, Depends(get_current_active_user)],
+    image_id: str,
+    qlty: Annotated[int, Body()] # percentage of quality to keep, 0-100
+):
+    # verify if the user own the image
+    verify_image_owner(User.username, image_id)
+
+    # get the image to edit
+    stored_image = get_image_by_id(image_id)
+
+    # create ImageInDB model from image data
+    stored_image_model = ImageInDB(**stored_image)
+
+    # compress the image and update the database
+    updated_image = update_image_compress(image_id, qlty, stored_image, stored_image_model)
 
     return updated_image

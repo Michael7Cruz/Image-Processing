@@ -127,7 +127,7 @@ def update_image_rotate(image_id: str, angle: float, stored_image: dict, stored_
         edited_image = im.rotate(angle)
         # save image to buffer with the original format and same quality
         edited_image.save(img_buffer, im.format, quality="keep")
-        edited_image.show()
+        #edited_image.show()
         modified_image_data = ImageUpdate(
             modified_date = datetime.datetime.now(),
             filesize = img_buffer.tell(),
@@ -180,6 +180,60 @@ def update_image_watermark_text(
             filesize = img_buffer.tell(),
             width = edited_image.width,
             height = edited_image.height,
+            data = img_buffer.getvalue()
+        )
+
+        updated_image = stored_image_model.model_copy(update=modified_image_data.model_dump(exclude_unset=True))
+
+        # save updated image to database
+        img_collection.update_one(
+            {"_id":ObjectId(image_id)},
+            {"$set":updated_image.model_dump()}
+        )
+    
+    return updated_image
+
+def update_image_flip(image_id: str, method: bool, stored_image: dict, stored_image_model: ImageInDB):
+    with Image.open(BytesIO(stored_image["data"])) as im:
+        # buffer to save and read edited image BytesIO data
+        img_buffer = BytesIO()
+        if method == 0:
+            edited_image = im.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+        else:
+            edited_image = im.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+        # save image to buffer with the original format and same quality
+        edited_image.save(img_buffer, im.format, quality="keep")
+        #edited_image.show()
+        modified_image_data = ImageUpdate(
+            modified_date = datetime.datetime.now(),
+            filesize = img_buffer.tell(),
+            width = edited_image.width,
+            height = edited_image.height,
+            data = img_buffer.getvalue()
+        )
+
+        updated_image = stored_image_model.model_copy(update=modified_image_data.model_dump(exclude_unset=True))
+
+        # save updated image to database
+        img_collection.update_one(
+            {"_id":ObjectId(image_id)},
+            {"$set":updated_image.model_dump()}
+        )
+    
+    return updated_image
+
+def update_image_compress(image_id: str, qlty: int, stored_image: dict, stored_image_model: ImageInDB):
+    with Image.open(BytesIO(stored_image["data"])) as im:
+        # buffer to save and read edited image BytesIO data
+        img_buffer = BytesIO()
+        # save image to buffer with the original format and same quality
+        im.save(img_buffer, im.format, optimize=True, quality=qlty)
+        #Image.open(img_buffer).show()
+        modified_image_data = ImageUpdate(
+            modified_date = datetime.datetime.now(),
+            filesize = img_buffer.tell(),
+            width = im.width,
+            height = im.height,
             data = img_buffer.getvalue()
         )
 
