@@ -127,6 +127,7 @@ def update_image_rotate(image_id: str, angle: float, stored_image: dict, stored_
         edited_image = im.rotate(angle)
         # save image to buffer with the original format and same quality
         edited_image.save(img_buffer, im.format, quality="keep")
+        edited_image.show()
         modified_image_data = ImageUpdate(
             modified_date = datetime.datetime.now(),
             filesize = img_buffer.tell(),

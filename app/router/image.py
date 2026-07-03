@@ -131,7 +131,7 @@ async def crop_image(
 async def rotate_image(
     User: Annotated[User, Depends(get_current_active_user)],
     image_id: str,
-    angle: float # in degrees counter clockwise.
+    angle: Annotated[float, Body()] # in degrees counter clockwise.
 ):
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
