@@ -2,7 +2,7 @@ import datetime
 from app.core.db import users_collection, img_collection
 from fastapi import Response, UploadFile, HTTPException, status
 from pymongo.collection import Collection
-from PIL import Image, ImageFont, ImageDraw
+from PIL import Image, ImageFont, ImageDraw, ImageFilter
 from app.models.Images import ImageFile, ImageInDB, ImageUpdate
 from bson.objectid import ObjectId
 from io import BytesIO
@@ -46,6 +46,7 @@ async def upload_image_to_db(img_collection: Collection, user_db: dict, img_file
     else:
         users_collection.update_one({"_id":user_db["_id"]},{"$set":{"images":[image_id]}})
 
+    im.close()
     return image_file
 
 def verify_image_owner(user: str, image_id: str):
@@ -86,6 +87,8 @@ def update_image_resize(image_id: str, size: tuple[int, int], stored_image: dict
             {"_id":ObjectId(image_id)},
             {"$set":updated_image.model_dump()}
         )
+
+    im.close()
     
     return updated_image
 
@@ -117,6 +120,8 @@ def update_image_crop(image_id: str, box: tuple[float, float, float, float] | No
             {"_id":ObjectId(image_id)},
             {"$set":updated_image.model_dump()}
         )
+
+    im.close()
     
     return updated_image
 
@@ -143,6 +148,8 @@ def update_image_rotate(image_id: str, angle: float, stored_image: dict, stored_
             {"_id":ObjectId(image_id)},
             {"$set":updated_image.model_dump()}
         )
+
+    im.close()
     
     return updated_image
 
@@ -172,7 +179,7 @@ def update_image_watermark_text(
         d.text(xy, text_watermark, font=fnt, fill=fill_color)
         #combine the original image with the watermark
         edited_image = Image.alpha_composite(im, watermark)
-        #edited_image.show()
+        edited_image.show()
         # save image to buffer with the original format and same quality
         edited_image.save(img_buffer, stored_image["format"], quality="keep")
         modified_image_data = ImageUpdate(
@@ -190,6 +197,8 @@ def update_image_watermark_text(
             {"_id":ObjectId(image_id)},
             {"$set":updated_image.model_dump()}
         )
+
+    im.close()
     
     return updated_image
 
@@ -219,6 +228,8 @@ def update_image_flip(image_id: str, method: bool, stored_image: dict, stored_im
             {"_id":ObjectId(image_id)},
             {"$set":updated_image.model_dump()}
         )
+
+    im.close()
     
     return updated_image
 
@@ -245,6 +256,8 @@ def update_image_compress(image_id: str, qlty: int, stored_image: dict, stored_i
             {"$set":updated_image.model_dump()}
         )
     
+    im.close()
+
     return updated_image
 
 def update_image_convert(image_id: str, format: str | None, stored_image: dict, stored_image_model: ImageInDB):
@@ -275,6 +288,8 @@ def update_image_convert(image_id: str, format: str | None, stored_image: dict, 
             {"$set":updated_image.model_dump()}
         )
     
+    im.close()
+    
     return updated_image
 
 async def image_download(filepath: str, stored_image: dict, stored_image_model: ImageInDB):
@@ -282,3 +297,52 @@ async def image_download(filepath: str, stored_image: dict, stored_image_model: 
         content=stored_image["data"],
         media_type=stored_image["content_type"],
     )
+
+def update_image_filter(image_id: str, filter_type: str | None, stored_image: dict, stored_image_model: ImageInDB):
+    with Image.open(BytesIO(stored_image["data"])) as im:
+        # buffer to save and read edited image BytesIO data
+        img_buffer = BytesIO()
+
+        # apply the desired filter
+        if filter_type == "grayscale":
+            edited_image = im.convert("L")
+        elif filter_type == "sepia":
+            sepia_image = im.convert("RGB")
+            width, height = sepia_image.size
+            pixels = sepia_image.load()
+
+            if pixels:
+                for py in range(height):
+                    for px in range(width):
+                        r, g, b = pixels[px, py]  # type: ignore
+                        tr = int(0.393 * r + 0.769 * g + 0.189 * b)
+                        tg = int(0.349 * r + 0.686 * g + 0.168 * b)
+                        tb = int(0.272 * r + 0.534 * g + 0.131 * b)
+                        pixels[px, py] = (min(tr, 255), min(tg, 255), min(tb, 255))
+
+            edited_image = sepia_image
+        else:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid filter type")
+        
+        # save image to buffer with the original format and same quality
+        edited_image.save(img_buffer, im.format)
+        #edited_image.show()
+        modified_image_data = ImageUpdate(
+            modified_date = datetime.datetime.now(),
+            filesize = img_buffer.tell(),
+            width = edited_image.width,
+            height = edited_image.height,
+            data = img_buffer.getvalue()
+        )
+
+        updated_image = stored_image_model.model_copy(update=modified_image_data.model_dump(exclude_unset=True))
+
+        # save updated image to database
+        img_collection.update_one(
+            {"_id":ObjectId(image_id)},
+            {"$set":updated_image.model_dump()}
+        )
+
+    im.close()
+    
+    return updated_image

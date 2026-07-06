@@ -9,6 +9,7 @@ from app.dependencies.image_proc import (
     get_user_complete_db,
     update_image_compress,
     update_image_convert,
+    update_image_filter,
     upload_image_to_db, 
     verify_image_owner, 
     get_image_by_id, 
@@ -263,3 +264,23 @@ async def download_image(
     downloaded_image = await image_download(filepath, stored_image, stored_image_model)
 
     return downloaded_image
+
+@router.patch("/filter", response_model=ImageFile)
+async def grayscale_image(
+    User: Annotated[User, Depends(get_current_active_user)],
+    image_id: str,
+    filter_type: Annotated[str | None, Body()] # desired filter from predefined filters (grayscale, sepia, etc.)
+):
+    # verify if the user own the image
+    verify_image_owner(User.username, image_id)
+
+    # get the image to edit
+    stored_image = get_image_by_id(image_id)
+
+    # create ImageInDB model from image data
+    stored_image_model = ImageInDB(**stored_image)
+
+    # convert the image format and update the database
+    updated_image = update_image_filter(image_id, filter_type, stored_image, stored_image_model)
+
+    return updated_image
