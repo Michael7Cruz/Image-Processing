@@ -8,6 +8,7 @@ from app.models.Images import ImageInDB, ImageFile
 from app.dependencies.image_proc import (
     get_user_complete_db,
     update_image_compress,
+    update_image_convert,
     upload_image_to_db, 
     verify_image_owner, 
     get_image_by_id, 
@@ -15,7 +16,8 @@ from app.dependencies.image_proc import (
     update_image_crop,
     update_image_rotate,
     update_image_watermark_text, 
-    update_image_flip
+    update_image_flip,
+    image_download
 )
 
 router = APIRouter(
@@ -221,3 +223,43 @@ async def compress_image(
     updated_image = update_image_compress(image_id, qlty, stored_image, stored_image_model)
 
     return updated_image
+
+@router.patch("/convert", response_model=ImageFile)
+async def convert_image(
+    User: Annotated[User, Depends(get_current_active_user)],
+    image_id: str,
+    format: Annotated[str | None, Body()] # desired image format
+):
+    # verify if the user own the image
+    verify_image_owner(User.username, image_id)
+
+    # get the image to edit
+    stored_image = get_image_by_id(image_id)
+
+    # create ImageInDB model from image data
+    stored_image_model = ImageInDB(**stored_image)
+
+    # convert the image format and update the database
+    updated_image = update_image_convert(image_id, format, stored_image, stored_image_model)
+
+    return updated_image
+
+@router.get("/download")
+async def download_image(
+    User: Annotated[User, Depends(get_current_active_user)],
+    image_id: str,
+    filepath: str
+):
+    # verify if the user own the image
+    verify_image_owner(User.username, image_id)
+
+    # get the image to edit
+    stored_image = get_image_by_id(image_id)
+
+    # create ImageInDB model from image data
+    stored_image_model = ImageInDB(**stored_image)
+
+    # download the image
+    downloaded_image = await image_download(filepath, stored_image, stored_image_model)
+
+    return downloaded_image

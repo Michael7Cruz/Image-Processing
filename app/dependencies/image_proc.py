@@ -1,6 +1,6 @@
 import datetime
 from app.core.db import users_collection, img_collection
-from fastapi import UploadFile, HTTPException, status
+from fastapi import Response, UploadFile, HTTPException, status
 from pymongo.collection import Collection
 from PIL import Image, ImageFont, ImageDraw
 from app.models.Images import ImageFile, ImageInDB, ImageUpdate
@@ -246,3 +246,39 @@ def update_image_compress(image_id: str, qlty: int, stored_image: dict, stored_i
         )
     
     return updated_image
+
+def update_image_convert(image_id: str, format: str | None, stored_image: dict, stored_image_model: ImageInDB):
+    with Image.open(BytesIO(stored_image["data"])) as im:
+        # buffer to save and read edited image BytesIO data
+        img_buffer = BytesIO()
+        # save image to buffer with the desired format
+        try:
+            im.save(img_buffer, format=format)
+        except KeyError:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid format")
+        #Image.open(img_buffer).show()
+        modified_image_data = ImageUpdate(
+            modified_date = datetime.datetime.now(),
+            filesize = img_buffer.tell(),
+            content_type = f"image/{format.lower()}" if format else stored_image["content_type"],
+            format = format,
+            width = im.width,
+            height = im.height,
+            data = img_buffer.getvalue()
+        )
+
+        updated_image = stored_image_model.model_copy(update=modified_image_data.model_dump(exclude_unset=True))
+
+        # save updated image to database
+        img_collection.update_one(
+            {"_id":ObjectId(image_id)},
+            {"$set":updated_image.model_dump()}
+        )
+    
+    return updated_image
+
+async def image_download(filepath: str, stored_image: dict, stored_image_model: ImageInDB):
+    return Response(
+        content=stored_image["data"],
+        media_type=stored_image["content_type"],
+    )
