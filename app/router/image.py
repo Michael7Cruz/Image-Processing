@@ -31,6 +31,10 @@ async def upload_image(
     User: Annotated[User, Depends(get_current_active_user)],
     img_file: UploadFile,
 ):
+    """
+    Upload an image file to the database and associate it with the current user.
+    - **img_file**: The image file to upload
+    """
     # get user data in collection including id to be passed to the image collection
     user_db = get_user_complete_db(User.username)
 
@@ -44,6 +48,10 @@ async def delete_image(
     User: Annotated[User, Depends(get_current_active_user)],
     image_id: str
 ):
+    """
+    Delete an image file from the database and remove its association with the current user.
+    - **image_id**: The ID of the image to delete
+    """
     # try to delete the image_id from the list of images id
     user_image_delete_result = users_collection.update_one({"username":User.username},{"$pull":{"images":ObjectId(image_id)}})
     if user_image_delete_result.modified_count == 0:
@@ -61,6 +69,10 @@ async def read_image(
     User: Annotated[User, Depends(get_current_active_user)],
     image_id: str
 ):
+    """
+    View an image file associated with the current user from the database.
+    - **image_id**: The ID of the image to view
+    """
     # verify if the user own the image
     user_db = get_user_complete_db(User.username)
     image_owned_by_user = ObjectId(image_id) in user_db["images"]
@@ -79,6 +91,9 @@ async def read_image(
 async def view_all_images(
     User: Annotated[User, Depends(get_current_active_user)]
 ):
+    """
+    View all image files associated with the current user from the database 
+    """
     user_db = get_user_complete_db(User.username)
     cursor = img_collection.find(
         {"owner_id":user_db["_id"]},
@@ -98,6 +113,11 @@ async def resize_image(
     image_id: str,
     size: tuple[int, int] # [width, height]
 ):
+    """
+    Resize an image file associated with the current user from the database. 
+    - **image_id**: The ID of the image to resize
+    - **size**: A tuple of two integers representing the new width and height of the image
+    """
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
     
@@ -118,6 +138,11 @@ async def crop_image(
     image_id: str,
     box: tuple[float, float, float, float] | None = None # left, upper, right, and lower pixel coordinate
 ):
+    """
+    Crop an image file associated with the current user from the database. 
+    - **image_id**: The ID of the image to crop
+    - **box**: A tuple of four floats representing the left, upper, right, and lower pixel coordinates of the cropping box
+    """
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
 
@@ -138,6 +163,11 @@ async def rotate_image(
     image_id: str,
     angle: Annotated[float, Body()] # in degrees counter clockwise.
 ):
+    """
+    Rotate an image file associated with the current user from the database. 
+    - **image_id**: The ID of the image to rotate
+    - **angle**: The angle in degrees to rotate the image counter-clockwise
+    """
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
 
@@ -162,6 +192,15 @@ async def watermark_text(
     font_type: Annotated[str, Body()] = "arial.ttf",
     font_size: Annotated[float, Body()] = 10.0
 ):
+    """
+    Add a text watermark to an image file associated with the current user from the database.
+    - **image_id**: The ID of the image to watermark
+    - **xy**: A tuple of two floats representing the x and y coordinates where the watermark will be placed
+    - **fill_color**: A tuple of four integers representing the RGBA values for the watermark color
+    - **text_watermark**: The text to use as the watermark
+    - **font_type**: The font file to use for the watermark
+    - **font_size**: The size of the font for the watermark
+    """
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
 
@@ -191,6 +230,11 @@ async def flip_image(
     image_id: str,
     method: Annotated[bool, Body()] # 0 for horizontal flip, 1 for vertical flip
 ):
+    """
+    Flip an image file associated with the current user from the database vertically or horizontally.
+    - **image_id**: The ID of the image to flip
+    - **method**: A boolean indicating the flip method (0 for horizontal, 1 for vertical)
+    """
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
 
@@ -211,6 +255,11 @@ async def compress_image(
     image_id: str,
     qlty: Annotated[int, Body()] # percentage of quality to keep, 0-100
 ):
+    """
+    Compress an image file associated with the current user from the database.
+    - **image_id**: The ID of the image to compress
+    - **qlty**: The percentage of quality to keep, 0-100
+    """
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
 
@@ -231,6 +280,11 @@ async def convert_image(
     image_id: str,
     format: Annotated[str | None, Body()] # desired image format
 ):
+    """
+    Convert an image file associated with the current user from the database.
+    - **image_id**: The ID of the image to convert
+    - **format**: The desired image format
+    """
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
 
@@ -251,6 +305,11 @@ async def download_image(
     image_id: str,
     filepath: str
 ):
+    """
+    Download an image file associated with the current user from the database.
+    - **image_id**: The ID of the image to download
+    - **filepath**: The local filepath where the image should be saved
+    """
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
 
@@ -271,6 +330,11 @@ async def grayscale_image(
     image_id: str,
     filter_type: Annotated[str | None, Body()] # desired filter from predefined filters (grayscale, sepia, etc.)
 ):
+    """
+    Add filter to an image file associated with the current user from the database. 
+    - **image_id**: The ID of the image to apply the filter to
+    - **filter_type**: The type of filter to apply (grayscale or sepia)
+    """
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
 
@@ -280,7 +344,7 @@ async def grayscale_image(
     # create ImageInDB model from image data
     stored_image_model = ImageInDB(**stored_image)
 
-    # convert the image format and update the database
+    # apply the filter and update the database
     updated_image = update_image_filter(image_id, filter_type, stored_image, stored_image_model)
 
     return updated_image
