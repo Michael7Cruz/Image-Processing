@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     )
 
     # JWT Token Config
-    SECRET_KEY: str = Field(secrets.token_urlsafe(32), repr=False)
+    SECRET_KEY: str 
     SIGN_ALGORITHM: str =  Field("HS256", repr=False)
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
@@ -26,4 +26,4 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings():
-    return Settings()
+    return Settings() # type: ignore
