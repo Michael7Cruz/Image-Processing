@@ -65,6 +65,22 @@ def get_image_by_id(image_id: str):
     
     return stored_image
 
+def get_stored_image_by_owner(username: str, image_id: str):
+    # exception if image id is invalid
+    if not ObjectId.is_valid(image_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
+    
+    # verify if the user own the image
+    verify_image_owner(username, image_id)
+    
+    # get the image to edit
+    stored_image = get_image_by_id(image_id)
+
+    # create ImageInDB model from image data
+    stored_image_model = ImageInDB(**stored_image)
+
+    return stored_image, stored_image_model
+
 def update_image_resize(image_id: str, size: tuple[int, int], stored_image: dict, stored_image_model: ImageInDB):
     with Image.open(BytesIO(stored_image["data"])) as im:
         # buffer to save and read edited image BytesIO data

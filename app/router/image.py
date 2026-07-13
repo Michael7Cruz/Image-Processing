@@ -4,15 +4,14 @@ from app.dependencies.auth_utils import get_current_active_user
 from app.models.Users import User
 from app.core.db import users_collection, img_collection
 from bson.objectid import ObjectId
-from app.models.Images import ImageInDB, ImageFile
+from app.models.Images import ImageFile
 from app.dependencies.image_proc import (
+    get_stored_image_by_owner,
     get_user_complete_db,
     update_image_compress,
     update_image_convert,
     update_image_filter,
     upload_image_to_db, 
-    verify_image_owner, 
-    get_image_by_id, 
     update_image_resize,
     update_image_crop,
     update_image_rotate,
@@ -127,18 +126,8 @@ async def resize_image(
     - **image_id**: The ID of the image to resize
     - **size**: A tuple of two integers representing the new width and height of the image
     """
-    # exception if image id is invalid
-    if not ObjectId.is_valid(image_id):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
-    
-    # verify if the user own the image
-    verify_image_owner(User.username, image_id)
-    
-    # get the image to edit
-    stored_image = get_image_by_id(image_id)
 
-    # create ImageInDB model from image data
-    stored_image_model = ImageInDB(**stored_image)
+    stored_image, stored_image_model = get_stored_image_by_owner(User.username, image_id)
 
     # open the image then resize, also edit the width and height data from database
     updated_image = update_image_resize(image_id, size, stored_image, stored_image_model)
@@ -157,18 +146,7 @@ async def crop_image(
     - **box**: A tuple of four floats representing the left, upper, right, and lower pixel coordinates of the cropping box
     """
 
-    # exception if image id is invalid
-    if not ObjectId.is_valid(image_id):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
-
-    # verify if the user own the image
-    verify_image_owner(User.username, image_id)
-
-    # get the image to edit
-    stored_image = get_image_by_id(image_id)
-
-    # create ImageInDB model from image data
-    stored_image_model = ImageInDB(**stored_image)
+    stored_image, stored_image_model = get_stored_image_by_owner(User.username, image_id)
 
     # crop the image and update the database
     updated_image = update_image_crop(image_id, box, stored_image, stored_image_model)
@@ -187,18 +165,7 @@ async def rotate_image(
     - **angle**: The angle in degrees to rotate the image counter-clockwise
     """
 
-    # exception if image id is invalid
-    if not ObjectId.is_valid(image_id):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
-    
-    # verify if the user own the image
-    verify_image_owner(User.username, image_id)
-
-    # get the image to edit
-    stored_image = get_image_by_id(image_id)
-
-    # create ImageInDB model from image data
-    stored_image_model = ImageInDB(**stored_image)
+    stored_image, stored_image_model = get_stored_image_by_owner(User.username, image_id)
 
     # crop the image and update the database
     updated_image = update_image_rotate(image_id, angle, stored_image, stored_image_model)
@@ -225,18 +192,7 @@ async def watermark_text(
     - **font_size**: The size of the font for the watermark
     """
 
-    # exception if image id is invalid
-    if not ObjectId.is_valid(image_id):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
-    
-    # verify if the user own the image
-    verify_image_owner(User.username, image_id)
-
-    # get the image to edit
-    stored_image = get_image_by_id(image_id)
-
-    # create ImageInDB model from image data
-    stored_image_model = ImageInDB(**stored_image)
+    stored_image, stored_image_model = get_stored_image_by_owner(User.username, image_id)
 
     # crop the image and update the database
     updated_image = update_image_watermark_text(
@@ -264,18 +220,7 @@ async def flip_image(
     - **method**: A boolean indicating the flip method (0 for horizontal, 1 for vertical)
     """
 
-    # exception if image id is invalid
-    if not ObjectId.is_valid(image_id):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
-
-    # verify if the user own the image
-    verify_image_owner(User.username, image_id)
-
-    # get the image to edit
-    stored_image = get_image_by_id(image_id)
-
-    # create ImageInDB model from image data
-    stored_image_model = ImageInDB(**stored_image)
+    stored_image, stored_image_model = get_stored_image_by_owner(User.username, image_id)
 
     # flip the image and update the database
     updated_image = update_image_flip(image_id, method, stored_image, stored_image_model)
@@ -294,18 +239,7 @@ async def compress_image(
     - **qlty**: The percentage of quality to keep, 0-100
     """
 
-    # exception if image id is invalid
-    if not ObjectId.is_valid(image_id):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
-
-    # verify if the user own the image
-    verify_image_owner(User.username, image_id)
-
-    # get the image to edit
-    stored_image = get_image_by_id(image_id)
-
-    # create ImageInDB model from image data
-    stored_image_model = ImageInDB(**stored_image)
+    stored_image, stored_image_model = get_stored_image_by_owner(User.username, image_id)
 
     # compress the image and update the database
     updated_image = update_image_compress(image_id, qlty, stored_image, stored_image_model)
@@ -324,18 +258,7 @@ async def convert_image(
     - **format**: The desired image format
     """
 
-    # exception if image id is invalid
-    if not ObjectId.is_valid(image_id):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
-    
-    # verify if the user own the image
-    verify_image_owner(User.username, image_id)
-
-    # get the image to edit
-    stored_image = get_image_by_id(image_id)
-
-    # create ImageInDB model from image data
-    stored_image_model = ImageInDB(**stored_image)
+    stored_image, stored_image_model = get_stored_image_by_owner(User.username, image_id)
 
     # convert the image format and update the database
     updated_image = update_image_convert(image_id, format, stored_image, stored_image_model)
@@ -354,18 +277,7 @@ async def download_image(
     - **filepath**: The local filepath where the image should be saved
     """
 
-    # exception if image id is invalid
-    if not ObjectId.is_valid(image_id):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
-
-    # verify if the user own the image
-    verify_image_owner(User.username, image_id)
-
-    # get the image to edit
-    stored_image = get_image_by_id(image_id)
-
-    # create ImageInDB model from image data
-    stored_image_model = ImageInDB(**stored_image)
+    stored_image, stored_image_model = get_stored_image_by_owner(User.username, image_id)
 
     # download the image
     downloaded_image = await image_download(filepath, stored_image, stored_image_model)
@@ -384,18 +296,7 @@ async def grayscale_image(
     - **filter_type**: The type of filter to apply (grayscale or sepia)
     """
 
-    # exception if image id is invalid
-    if not ObjectId.is_valid(image_id):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
-
-    # verify if the user own the image
-    verify_image_owner(User.username, image_id)
-
-    # get the image to edit
-    stored_image = get_image_by_id(image_id)
-
-    # create ImageInDB model from image data
-    stored_image_model = ImageInDB(**stored_image)
+    stored_image, stored_image_model = get_stored_image_by_owner(User.username, image_id)
 
     # apply the filter and update the database
     updated_image = update_image_filter(image_id, filter_type, stored_image, stored_image_model)
