@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, Depends, UploadFile, HTTPException, status
+from fastapi import APIRouter, Body, Depends, Response, UploadFile, HTTPException, status
 from typing import Annotated
 from app.dependencies.auth_utils import get_current_active_user
 from app.models.Users import User
@@ -73,6 +73,9 @@ async def read_image(
     View an image file associated with the current user from the database.
     - **image_id**: The ID of the image to view
     """
+    # exception if image id is invalid
+    if not ObjectId.is_valid(image_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
     # verify if the user own the image
     user_db = get_user_complete_db(User.username)
     image_owned_by_user = ObjectId(image_id) in user_db["images"]
@@ -82,10 +85,16 @@ async def read_image(
     # get the image data from collection (not including ids)
     image = img_collection.find_one(
         {"_id":ObjectId(image_id)},
-        {"_id":0,"data":0,"owner_id":0}
+        {"_id":0,"owner_id":0}
     )
-
-    return {"image found": image}
+    # exception if image is not found
+    if image is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="image not found")
+    
+    return Response(
+        content=image["data"],
+        media_type=image["content_type"],
+    )
 
 @router.get("/viewall")
 async def view_all_images(
