@@ -127,6 +127,10 @@ async def resize_image(
     - **image_id**: The ID of the image to resize
     - **size**: A tuple of two integers representing the new width and height of the image
     """
+    # exception if image id is invalid
+    if not ObjectId.is_valid(image_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
+    
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
     
@@ -152,6 +156,11 @@ async def crop_image(
     - **image_id**: The ID of the image to crop
     - **box**: A tuple of four floats representing the left, upper, right, and lower pixel coordinates of the cropping box
     """
+
+    # exception if image id is invalid
+    if not ObjectId.is_valid(image_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
+
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
 
@@ -177,6 +186,11 @@ async def rotate_image(
     - **image_id**: The ID of the image to rotate
     - **angle**: The angle in degrees to rotate the image counter-clockwise
     """
+
+    # exception if image id is invalid
+    if not ObjectId.is_valid(image_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
+    
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
 
@@ -210,6 +224,11 @@ async def watermark_text(
     - **font_type**: The font file to use for the watermark
     - **font_size**: The size of the font for the watermark
     """
+
+    # exception if image id is invalid
+    if not ObjectId.is_valid(image_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
+    
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
 
@@ -244,6 +263,11 @@ async def flip_image(
     - **image_id**: The ID of the image to flip
     - **method**: A boolean indicating the flip method (0 for horizontal, 1 for vertical)
     """
+
+    # exception if image id is invalid
+    if not ObjectId.is_valid(image_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
+
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
 
@@ -269,6 +293,11 @@ async def compress_image(
     - **image_id**: The ID of the image to compress
     - **qlty**: The percentage of quality to keep, 0-100
     """
+
+    # exception if image id is invalid
+    if not ObjectId.is_valid(image_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
+
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
 
@@ -294,6 +323,11 @@ async def convert_image(
     - **image_id**: The ID of the image to convert
     - **format**: The desired image format
     """
+
+    # exception if image id is invalid
+    if not ObjectId.is_valid(image_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
+    
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
 
@@ -319,6 +353,11 @@ async def download_image(
     - **image_id**: The ID of the image to download
     - **filepath**: The local filepath where the image should be saved
     """
+
+    # exception if image id is invalid
+    if not ObjectId.is_valid(image_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
+
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
 
@@ -344,6 +383,11 @@ async def grayscale_image(
     - **image_id**: The ID of the image to apply the filter to
     - **filter_type**: The type of filter to apply (grayscale or sepia)
     """
+
+    # exception if image id is invalid
+    if not ObjectId.is_valid(image_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid image id")
+
     # verify if the user own the image
     verify_image_owner(User.username, image_id)
 
