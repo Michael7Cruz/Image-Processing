@@ -114,7 +114,7 @@ def update_image_crop(image_id: str, box: tuple[float, float, float, float] | No
         img_buffer = BytesIO()
         # check validity of box based on image size
         # The right is (left+width) and lower is (upper+height).
-        box_is_valid = box and box[0] >= 0 and box[1] >= 0 and box[0] + box[2] <= im.width and box[1] + box[3] <= im.height
+        box_is_valid = box and box[0] >= 0 and box[1] >= 0 and box[0] + box[2] <= im.width and box[1] + box[3] <= im.height and box[2] > box[0] and box[3] > box[1]
         if box_is_valid:
             edited_image = im.crop(box)
         else:
