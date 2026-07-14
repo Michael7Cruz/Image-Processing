@@ -86,8 +86,8 @@ def update_image_resize(image_id: str, size: tuple[int, int], stored_image: dict
         # buffer to save and read edited image BytesIO data
         img_buffer = BytesIO()
         edited_image = im.resize(size)
-        # save image to buffer with the original format and same quality
-        edited_image.save(img_buffer, im.format, quality="keep")
+        # save image to buffer with the original format 
+        edited_image.save(img_buffer, im.format)
         modified_image_data = ImageUpdate(
             modified_date = datetime.datetime.now(),
             filesize = img_buffer.tell(),
@@ -119,8 +119,8 @@ def update_image_crop(image_id: str, box: tuple[float, float, float, float] | No
             edited_image = im.crop(box)
         else:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid rectangular region")
-        # save image to buffer with the original format and same quality
-        edited_image.save(img_buffer, im.format, quality="keep")
+        # save image to buffer with the original format 
+        edited_image.save(img_buffer, im.format)
         modified_image_data = ImageUpdate(
             modified_date = datetime.datetime.now(),
             filesize = img_buffer.tell(),
@@ -146,8 +146,8 @@ def update_image_rotate(image_id: str, angle: float, stored_image: dict, stored_
         # buffer to save and read edited image BytesIO data
         img_buffer = BytesIO()
         edited_image = im.rotate(angle)
-        # save image to buffer with the original format and same quality
-        edited_image.save(img_buffer, im.format, quality="keep")
+        # save image to buffer with the original format
+        edited_image.save(img_buffer, im.format)
         #edited_image.show()
         modified_image_data = ImageUpdate(
             modified_date = datetime.datetime.now(),
@@ -196,8 +196,8 @@ def update_image_watermark_text(
         #combine the original image with the watermark
         edited_image = Image.alpha_composite(im, watermark)
         edited_image.show()
-        # save image to buffer with the original format and same quality
-        edited_image.save(img_buffer, stored_image["format"], quality="keep")
+        # save image to buffer with the original format
+        edited_image.save(img_buffer, stored_image["format"], quality=95)
         modified_image_data = ImageUpdate(
             modified_date = datetime.datetime.now(),
             filesize = img_buffer.tell(),
@@ -226,8 +226,8 @@ def update_image_flip(image_id: str, method: bool, stored_image: dict, stored_im
             edited_image = im.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
         else:
             edited_image = im.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
-        # save image to buffer with the original format and same quality
-        edited_image.save(img_buffer, im.format, quality="keep")
+        # save image to buffer with the original format
+        edited_image.save(img_buffer, im.format)
         #edited_image.show()
         modified_image_data = ImageUpdate(
             modified_date = datetime.datetime.now(),
@@ -341,7 +341,7 @@ def update_image_filter(image_id: str, filter_type: str | None, stored_image: di
         else:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid filter type")
         
-        # save image to buffer with the original format and same quality
+        # save image to buffer with the original format
         edited_image.save(img_buffer, im.format)
         #edited_image.show()
         modified_image_data = ImageUpdate(
