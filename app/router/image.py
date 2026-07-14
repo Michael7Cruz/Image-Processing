@@ -285,7 +285,7 @@ async def download_image(
     return downloaded_image
 
 @router.patch("/filter", response_model=ImageFile)
-async def grayscale_image(
+async def filter_image(
     User: Annotated[User, Depends(get_current_active_user)],
     image_id: str,
     filter_type: Annotated[str | None, Body()] # desired filter from predefined filters (grayscale, sepia, etc.)
