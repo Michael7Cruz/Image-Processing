@@ -287,6 +287,7 @@ def update_image_convert(image_id: str, format: str | None, stored_image: dict, 
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid format")
         #Image.open(img_buffer).show()
         modified_image_data = ImageUpdate(
+            filename = stored_image["filename"].rsplit(".", 1)[0] + "." + format.lower() if format else stored_image["filename"],
             modified_date = datetime.datetime.now(),
             filesize = img_buffer.tell(),
             content_type = f"image/{format.lower()}" if format else stored_image["content_type"],
