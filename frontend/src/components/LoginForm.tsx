@@ -1,10 +1,26 @@
+import { useContext } from "react";
+import { AuthContext } from "../services/AuthContext";
 import SubmitLoginForm from "../services/SubmitLoginForm";
 
 interface LogInFormProps {
-    onLogInSuccess: () => void;
 }
 
-function LoginForm({onLogInSuccess}: LogInFormProps) {
+async function viewAllImages(token: string) {
+    const res = await fetch("http://localhost:8000/image/viewall", 
+                {
+                    method:"GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            )
+
+    return res;
+}
+
+function LoginForm({}: LogInFormProps) {
+    const { setToken } = useContext(AuthContext);
+    
     const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
         const result = await SubmitLoginForm(
@@ -12,18 +28,11 @@ function LoginForm({onLogInSuccess}: LogInFormProps) {
             (e.currentTarget.getElementsByClassName("form-control")[1] as HTMLInputElement).value
         );  
         if (result.success) {
-            onLogInSuccess();
-            /*sample fetch while authorized*/
-            const res = await fetch("http://localhost:8000/image/viewall", 
-                {
-                    method:"GET",
-                    headers: {
-                        Authorization: `Bearer ${result.data.access_token}`
-                    }
-
-                }
-            )
-            console.log(await res.json())
+            // Store the token in context for future requests
+            
+            localStorage.setItem("token", result.data.access_token);
+            setToken(result.data.access_token);
+            
         }
     }
     
