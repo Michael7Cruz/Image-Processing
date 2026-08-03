@@ -2,37 +2,18 @@ import { useContext } from "react";
 import { AuthContext } from "../services/AuthContext";
 import SubmitLoginForm from "../services/SubmitLoginForm";
 
-interface LogInFormProps {
-}
-
-async function viewAllImages(token: string) {
-    const res = await fetch("http://localhost:8000/image/viewall", 
-                {
-                    method:"GET",
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
-            )
-
-    return res;
-}
-
-function LoginForm({}: LogInFormProps) {
+function LoginForm() {
     const { setToken } = useContext(AuthContext);
     
     const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const result = await SubmitLoginForm(
-            (e.currentTarget.getElementsByClassName("form-control")[0] as HTMLInputElement).value,
-            (e.currentTarget.getElementsByClassName("form-control")[1] as HTMLInputElement).value
-        );  
+        const username = (e.currentTarget.getElementsByClassName("form-control")[0] as HTMLInputElement).value;
+        const password = (e.currentTarget.getElementsByClassName("form-control")[1] as HTMLInputElement).value;
+        const result = await SubmitLoginForm(username, password);
         if (result.success) {
             // Store the token in context for future requests
-            
             localStorage.setItem("token", result.data.access_token);
             setToken(result.data.access_token);
-            
         }
     }
     

@@ -1,46 +1,17 @@
+import getUserProfile from "../hooks/getUserProfile";
 import { AuthContext } from "../services/AuthContext";
-import { useContext, useEffect, useState } from "react";
+import { useContext } from "react";
 
-async function viewUser(token: string | null) {
-    const res = await fetch("http://localhost:8000/users/me", 
-                {
-                    method:"GET",
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
-            )
 
-    return res;
-}
 
 function UserProfile() {
-    const [user, setUser] = useState({"username": "...", "email": "...", "full_name": "...", "disabled": true});
-    const storedToken = localStorage.getItem("token");
-    const { token } = useContext(AuthContext);
+    const user = getUserProfile();
     const { setToken } = useContext(AuthContext);
     const handleLogout = () => {
         localStorage.removeItem("token");
         setToken(null);
     };
-
-    useEffect(() => {
-        const currentToken = token || storedToken;
-
-        if (!currentToken) return;
-
-        async function fetchUser() {
-            const res = await viewUser(currentToken);
-
-            if (res.ok) {
-                const userData = await res.json();
-                setUser(userData);
-            }
-        }
-
-        fetchUser();
-    }, [token]); // runs when the token changes
-
+    
     return ( 
         <>
             <div className="container d-flex justify-content-center mt-5">
