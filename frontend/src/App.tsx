@@ -20,7 +20,7 @@ function App() {
         <UserProfile />
       ):(
         <div className="row justify-content-center">
-          <div className="col-6 p-5 mt-5 border rounded-3 shadow">
+          <div className="col-6 p-5 mt-5 border rounded-3 shadow-sm">
             
               <LoginForm />
             
