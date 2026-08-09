@@ -3,7 +3,7 @@ import { AuthContext } from "../services/AuthContext";
 import { refreshAccessToken } from "../services/RefreshToken";
 
 async function viewUser(token: string | null) {
-    const res = await fetch("http://localhost:8000/users/me", 
+    const res = await fetch("http://127.0.0.1:8000/users/me", 
                 {
                     method:"GET",
                     headers: {

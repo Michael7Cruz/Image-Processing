@@ -1,7 +1,8 @@
 export default async function submitLoginForm(username: string, password: string) {
     try {
-        const response = await fetch("http://localhost:8000/users/token", {
+        const response = await fetch("http://127.0.0.1:8000/users/token", {
             method: "POST",
+            credentials: "include",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
             },
