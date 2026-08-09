@@ -9,3 +9,5 @@ To use this application,
 4. Open the OpenAPI documentation on your browser.
 5. Sign up using the **/users/create** path.
 6. Sign in using the authorize button at the top of the OpenAPI documentation.
+
+This project is a work in progress.
