@@ -8,7 +8,7 @@ app = FastAPI()
 app.include_router(user.router)
 app.include_router(image.router)
 
-origins = ["http://localhost:5173"]
+origins = ["http://127.0.0.1:5173"]
 
 app.add_middleware(
     CORSMiddleware,

@@ -16,7 +16,8 @@ class Settings(BaseSettings):
     # JWT Token Config
     SECRET_KEY: str 
     SIGN_ALGORITHM: str =  Field("HS256", repr=False)
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 10
     
     # MongoDB Client
     MONGO_DSN: Annotated[

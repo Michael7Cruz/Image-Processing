@@ -13,7 +13,7 @@ function App() {
         setToken(storedToken);
     }
   }, []);
-  
+
   return <>
     <AuthContext.Provider value={{ token, setToken }}>
     {token ? (
